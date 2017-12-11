@@ -1,5 +1,5 @@
 
-package com.tehreh1uneh.petrichor.restclient.jsonmodel;
+package com.tehreh1uneh.petrichor.model.restclient.response;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -8,7 +8,7 @@ public class Main {
 
     @SerializedName("temp")
     @Expose
-    private Double temp;
+    private Double temperature;
     @SerializedName("pressure")
     @Expose
     private Integer pressure;
@@ -22,12 +22,12 @@ public class Main {
     @Expose
     private Double tempMax;
 
-    public Double getTemp() {
-        return temp;
+    public Double getTemperature() {
+        return temperature;
     }
 
-    public void setTemp(Double temp) {
-        this.temp = temp;
+    public void setTemperature(Double temperature) {
+        this.temperature = temperature;
     }
 
     public Integer getPressure() {

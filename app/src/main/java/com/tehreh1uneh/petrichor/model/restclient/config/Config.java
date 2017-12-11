@@ -1,4 +1,4 @@
-package com.tehreh1uneh.petrichor.restclient.config;
+package com.tehreh1uneh.petrichor.model.restclient.config;
 
 public final class Config {
     public static final String API_KEY_OPEN_WEATHER = "25dba57b32e5e71ebbdf4abda6b76b22";

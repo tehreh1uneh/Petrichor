@@ -1,5 +1,5 @@
 
-package com.tehreh1uneh.petrichor.restclient.jsonmodel;
+package com.tehreh1uneh.petrichor.model.restclient.response;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

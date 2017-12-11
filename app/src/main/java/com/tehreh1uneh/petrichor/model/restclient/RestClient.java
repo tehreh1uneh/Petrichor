@@ -1,11 +1,9 @@
-package com.tehreh1uneh.petrichor.restclient;
-
-import android.app.Application;
+package com.tehreh1uneh.petrichor.model.restclient;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import static com.tehreh1uneh.petrichor.restclient.config.Config.BASE_URL;
+import static com.tehreh1uneh.petrichor.model.restclient.config.Config.BASE_URL;
 
 
 public class RestClient{
@@ -21,11 +19,11 @@ public class RestClient{
         api = retrofit.create(OpenWeatherApi.class);
     }
 
-
     public static OpenWeatherApi getApi() {
         if (api == null){
             createApi();
         }
         return api;
     }
+
 }

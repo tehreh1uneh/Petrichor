@@ -1,15 +1,16 @@
 
-package com.tehreh1uneh.petrichor.restclient.jsonmodel;
+package com.tehreh1uneh.petrichor.model.restclient.response;
 
-import java.util.List;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+
+import java.util.List;
 
 public class CurrentWeatherModel {
 
     @SerializedName("coord")
     @Expose
-    private Coord coord;
+    private Coordinates coordinates;
     @SerializedName("weather")
     @Expose
     private List<Weather> weather = null;
@@ -44,12 +45,12 @@ public class CurrentWeatherModel {
     @Expose
     private Integer cod;
 
-    public Coord getCoord() {
-        return coord;
+    public Coordinates getCoordinates() {
+        return coordinates;
     }
 
-    public void setCoord(Coord coord) {
-        this.coord = coord;
+    public void setCoordinates(Coordinates coordinates) {
+        this.coordinates = coordinates;
     }
 
     public List<Weather> getWeather() {

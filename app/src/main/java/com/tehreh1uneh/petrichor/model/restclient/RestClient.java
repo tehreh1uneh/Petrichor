@@ -3,8 +3,7 @@ package com.tehreh1uneh.petrichor.model.restclient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import static com.tehreh1uneh.petrichor.model.restclient.config.Config.BASE_URL;
-
+import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient.BASE_URL;
 
 public class RestClient{
 
@@ -25,5 +24,4 @@ public class RestClient{
         }
         return api;
     }
-
 }

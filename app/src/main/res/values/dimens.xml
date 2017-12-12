@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="petrichor_field_search_text_size">30sp</dimen>
+    <dimen name="petrichor_margin_basic">16dp</dimen>
+    <dimen name="petrichor_margin_basic_half">8dp</dimen>
+    <dimen name="petrichor_degrees_text_size">50sp</dimen>
+    <dimen name="margin_additional_description">24dp</dimen>
+</resources>

@@ -1,6 +1,16 @@
 <resources>
     <string name="app_name">Petrichor</string>
+    <string name="pertichor_field_search_hint">London,UK</string>
+    <string name="petrichor_today">today</string>
+    <string-array name="directions">
+        <item>N</item>
+        <item>NE</item>
+        <item>E</item>
+        <item>SE</item>
+        <item>S</item>
+        <item>SW</item>
+        <item>W</item>
+        <item>NW</item>
+    </string-array>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

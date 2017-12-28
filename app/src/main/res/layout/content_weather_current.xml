@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/petrichor_edit_text_city"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/petrichor_margin_basic"
+        android:textAlignment="center"
+        android:textSize="@dimen/petrichor_field_search_text_size"
+        android:hint="@string/pertichor_field_search_hint" />
+
+    <TextView
+        android:id="@+id/petrichor_text_view_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/petrichor_margin_basic_half"
+        android:textAlignment="center"
+        android:textSize="16sp"
+        tools:text="Clear" />
+
+    <TextView
+        android:id="@+id/petrichor_text_view_current_temperature"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/petrichor_margin_basic_half"
+        android:textSize="@dimen/petrichor_degrees_text_size"
+        tools:text="-15°" />
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/petrichor_text_view_day_of_week"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintLeft_toRightOf="parent"
+            android:paddingLeft="@dimen/petrichor_margin_basic_half"
+            tools:text="Sunday" />
+
+        <TextView
+            android:id="@+id/petrichor_text_view_today"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintLeft_toRightOf="@id/petrichor_text_view_day_of_week"
+            android:paddingLeft="@dimen/petrichor_margin_basic_half"
+            tools:text="today" />
+
+        <TextView
+            android:id="@+id/petrichor_text_view_temperature_min"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintRight_toLeftOf="@id/petrichor_text_view_temperature_max"
+            tools:text="-25" />
+
+        <TextView
+            android:id="@+id/petrichor_text_view_temperature_max"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintRight_toLeftOf="parent"
+            android:paddingLeft="@dimen/petrichor_margin_basic_half"
+            android:paddingRight="@dimen/petrichor_margin_basic_half"
+            tools:text="-10" />
+
+    </android.support.constraint.ConstraintLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/black"
+        android:layout_marginLeft="@dimen/petrichor_margin_basic_half"
+        android:layout_marginRight="@dimen/petrichor_margin_basic_half" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/petrichor_margin_basic"
+        android:layout_marginLeft="@dimen/petrichor_margin_basic"
+        android:textAllCaps="true"
+        android:textColor="@android:color/black"
+        android:text="@string/petrichor_wind_title"
+        tools:text="Wind" />
+
+    <TextView
+        android:id="@+id/petrichor_text_view_wind"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/margin_additional_description"
+        tools:text="NE 3 m/s" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/petrichor_margin_basic_half"
+        android:layout_marginLeft="@dimen/petrichor_margin_basic"
+        android:textAllCaps="true"
+        android:textColor="@android:color/black"
+        android:text="@string/petrichor_pressure_title"
+        tools:text="Pressure" />
+
+    <TextView
+        android:id="@+id/petrichor_text_view_pressure"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/margin_additional_description"
+        tools:text="1000 hPa" />
+
+
+</LinearLayout>

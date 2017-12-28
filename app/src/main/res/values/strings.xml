@@ -13,4 +13,16 @@
         <item>NW</item>
     </string-array>
 
+    <string name="petrichor_action_settings">Settings</string>
+    <string name="petrichor_wind_title">Wind</string>
+    <string name="petrichor_pressure_title">Pressure</string>
+    <string name="petrichor_header_navigation_first_line">Have a good day!</string>
+    <string name="petrichor_menu_drawer_communication_title">Communicate</string>
+    <string name="petrichor_menu_drawer_share">Share</string>
+    <string name="petrichor_menu_drawer_send">Send</string>
+
+    <string name="navigation_drawer_open">Open help menu</string>
+    <string name="navigation_drawer_close">Close help menu</string>
+    <string name="petrichor_header_image_description">little sun</string>
+
 </resources>

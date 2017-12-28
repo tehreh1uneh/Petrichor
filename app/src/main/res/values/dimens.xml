@@ -5,4 +5,10 @@
     <dimen name="petrichor_margin_basic_half">8dp</dimen>
     <dimen name="petrichor_degrees_text_size">50sp</dimen>
     <dimen name="margin_additional_description">24dp</dimen>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="nav_header_vertical_spacing">8dp</dimen>
+    <dimen name="nav_header_height">176dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
 </resources>

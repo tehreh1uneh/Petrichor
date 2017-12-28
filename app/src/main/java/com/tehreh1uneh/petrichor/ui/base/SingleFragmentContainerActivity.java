@@ -27,4 +27,6 @@ abstract public class SingleFragmentContainerActivity extends AppCompatActivity 
                     .commit();
         }
     }
+
+
 }

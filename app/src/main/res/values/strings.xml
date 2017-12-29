@@ -24,5 +24,6 @@
     <string name="navigation_drawer_open">Open help menu</string>
     <string name="navigation_drawer_close">Close help menu</string>
     <string name="petrichor_header_image_description">little sun</string>
+    <string name="petrichor_key_last_received_city">city</string>
 
 </resources>

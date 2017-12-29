@@ -1,5 +1,7 @@
 package com.tehreh1uneh.petrichor.ui.currentweather;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -40,6 +42,7 @@ import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient
 import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient.LANGUAGE_DESCRIPTION;
 import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient.UNITS_FORMAT;
 import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.CURRENT_GMT;
+import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.DEFAULT_CITY;
 
 public class CurrentWeatherFragment extends Fragment implements NavigationView.OnNavigationItemSelectedListener, IOnBackListener {
 
@@ -54,49 +57,18 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     private TextView maxTemperatureTextView;
     private TextView windTextView;
     private TextView pressureTextView;
+    private DrawerLayout drawer;
 
     private SimpleDateFormat dateFormat;
+    private String lastReceivedCity;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         currentWeatherView = inflater.inflate(R.layout.fragment_weather_current, container, false);
-        Toolbar toolbar = currentWeatherView.findViewById(R.id.toolbar);
-        AppCompatActivity currentActivity = (CurrentWeatherActivity) getActivity();
-        currentActivity.setSupportActionBar(toolbar);
-
-        DrawerLayout drawer = currentWeatherView.findViewById(R.id.layout_drawer_weather_current);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(currentActivity, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-
-        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-        toggle.setDrawerIndicatorEnabled(false);
-        toggle.setHomeAsUpIndicator(R.drawable.ic_menu_humberger_24dp);
-
-        toggle.setToolbarNavigationClickListener(v -> {
-            System.out.println("clicked!");
-            if (drawer.isDrawerOpen(GravityCompat.START)) {
-                drawer.closeDrawer(GravityCompat.START);
-            } else {
-                drawer.openDrawer(GravityCompat.START);
-            }
-        });
-
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-
-        FloatingActionButton fab = currentWeatherView.findViewById(R.id.floating_button_send);
-        fab.setOnClickListener(view ->
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show());
-
-        NavigationView navigationView = currentWeatherView.findViewById(R.id.navigation_view_weather_current);
-        navigationView.setNavigationItemSelectedListener(this);
-
-        setHasOptionsMenu(true);
-
-//        View currentWeatherView = inflater.inflate(R.layout.content_weather_current, container, false);
         initializeViews(currentWeatherView);
+        loadSettingsFromPreferences();
 
         dateFormat = new SimpleDateFormat("EEEE");
         dateFormat.setTimeZone(TimeZone.getTimeZone(CURRENT_GMT));
@@ -105,6 +77,27 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     }
 
     private void initializeViews(View currentView) {
+
+        Toolbar toolbar = currentWeatherView.findViewById(R.id.toolbar);
+        AppCompatActivity currentActivity = (CurrentWeatherActivity) getActivity();
+        currentActivity.setSupportActionBar(toolbar);
+
+        drawer = currentWeatherView.findViewById(R.id.layout_drawer_weather_current);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(currentActivity, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        toggle.setDrawerIndicatorEnabled(false);
+        toggle.setHomeAsUpIndicator(R.drawable.ic_menu_humberger_24dp);
+        toggle.setToolbarNavigationClickListener(this::onClickToolbarNavigationButton);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        FloatingActionButton floatingButtonSend = currentWeatherView.findViewById(R.id.floating_button_send);
+        floatingButtonSend.setOnClickListener(this::onClickFloatingButtonSend);
+        NavigationView navigationView = currentWeatherView.findViewById(R.id.navigation_view_weather_current);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        setHasOptionsMenu(true);
+
         cityEditText = currentView.findViewById(R.id.petrichor_edit_text_city);
         cityEditText.setOnEditorActionListener(this::onChangeFieldCity);
 
@@ -120,9 +113,34 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         pressureTextView = currentView.findViewById(R.id.petrichor_text_view_pressure);
     }
 
+    private void loadSettingsFromPreferences() {
+        SharedPreferences preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        lastReceivedCity = preferences.getString(getString(R.string.petrichor_key_last_received_city), getLastReceivedCity());
+        cityEditText.setText(lastReceivedCity);
+        updateCurrentWeather();
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_settings_weather_current, menu);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        saveToSharedPreferences(getString(R.string.petrichor_key_last_received_city), getLastReceivedCity());
+        super.onSaveInstanceState(outState);
+    }
+
+    private void onClickToolbarNavigationButton(View v) {
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            drawer.openDrawer(GravityCompat.START);
+        }
+    }
+
+    private void onClickFloatingButtonSend(View v) {
+        Snackbar.make(v, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
     }
 
     private boolean onChangeFieldCity(TextView v, int actionId, KeyEvent event) {
@@ -139,14 +157,17 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     }
 
     private void updateCurrentWeather() {
-        RestClient.getApi().getCurrentWeatherByCity(cityEditText.getText().toString(), UNITS_FORMAT, LANGUAGE_DESCRIPTION, API_KEY_OPEN_WEATHER).enqueue(new Callback<CurrentWeatherModel>() {
+        String cityName = cityEditText.getText().toString();
+
+        RestClient.getApi().getCurrentWeatherByCity(cityName, UNITS_FORMAT, LANGUAGE_DESCRIPTION, API_KEY_OPEN_WEATHER).enqueue(new Callback<CurrentWeatherModel>() {
             @Override
             public void onResponse(Call<CurrentWeatherModel> call, Response<CurrentWeatherModel> response) {
                 if (response.isSuccessful()) {
                     CurrentWeatherModel receivedModel = response.body();
                     fillData(receivedModel);
+                    lastReceivedCity = cityName;
                 } else {
-
+                    // TODO message like 'something is going wrong'
                 }
             }
 
@@ -155,6 +176,18 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
 
             }
         });
+    }
+
+    private String getLastReceivedCity() {
+        if (lastReceivedCity == null || lastReceivedCity.isEmpty()) {
+            return DEFAULT_CITY;
+        }
+        return lastReceivedCity;
+    }
+
+    private void saveToSharedPreferences(String key, String value) {
+        SharedPreferences preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+        preferences.edit().putString(key, value).apply();
     }
 
     private void fillData(CurrentWeatherModel model) {
@@ -203,10 +236,11 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
                 if (degrees >= max - halfStep || degrees < halfStep) {
                     break;
                 }
-            } else {
-                if (degrees >= left && degrees < right) {
-                    break;
-                }
+            }
+
+            if (degrees >= left && degrees < right) {
+                position++;
+                break;
             }
 
             left += step;

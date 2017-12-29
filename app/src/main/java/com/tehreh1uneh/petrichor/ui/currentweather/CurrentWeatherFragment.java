@@ -2,9 +2,11 @@ package com.tehreh1uneh.petrichor.ui.currentweather;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -14,6 +16,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,7 +32,12 @@ import com.tehreh1uneh.petrichor.R;
 import com.tehreh1uneh.petrichor.model.restclient.RestClient;
 import com.tehreh1uneh.petrichor.model.restclient.response.CurrentWeatherModel;
 import com.tehreh1uneh.petrichor.ui.base.IOnBackListener;
+import com.tehreh1uneh.petrichor.ui.saveddata.SharedPreferencesHelper;
+import com.tehreh1uneh.petrichor.ui.saveddata.StorageHelper;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -43,8 +51,11 @@ import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient
 import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient.UNITS_FORMAT;
 import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.CURRENT_GMT;
 import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.DEFAULT_CITY;
+import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.FILE_NAME_LAST_WEATHER_DESCRIPTION;
 
 public class CurrentWeatherFragment extends Fragment implements NavigationView.OnNavigationItemSelectedListener, IOnBackListener {
+
+    public static final String TAG = "###" + CurrentWeatherFragment.class.getSimpleName();
 
     private View currentWeatherView;
 
@@ -68,6 +79,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
 
         currentWeatherView = inflater.inflate(R.layout.fragment_weather_current, container, false);
         initializeViews(currentWeatherView);
+        loadTextFromInternalOrExternalStorage();
         loadSettingsFromPreferences();
 
         dateFormat = new SimpleDateFormat("EEEE");
@@ -127,7 +139,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        saveToSharedPreferences(getString(R.string.petrichor_key_last_received_city), getLastReceivedCity());
+        SharedPreferencesHelper.saveToSharedPreferences(getActivity(), getString(R.string.petrichor_key_last_received_city), getLastReceivedCity());
         super.onSaveInstanceState(outState);
     }
 
@@ -166,6 +178,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
                     CurrentWeatherModel receivedModel = response.body();
                     fillData(receivedModel);
                     lastReceivedCity = cityName;
+                    saveWeatherDescriptionToInternalAndExternalStorage();
                 } else {
                     // TODO message like 'something is going wrong'
                 }
@@ -185,9 +198,53 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         return lastReceivedCity;
     }
 
-    private void saveToSharedPreferences(String key, String value) {
-        SharedPreferences preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
-        preferences.edit().putString(key, value).apply();
+    private void loadTextFromInternalOrExternalStorage() {
+        if (!StorageHelper.isExternalStorageReadable()) {
+            return;
+        }
+
+        String description;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            description = StorageHelper.loadTextFromExternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
+        } else {
+            description = StorageHelper.loadTextFromInternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
+        }
+
+        descriptionTextView.setText(description);
+    }
+
+    private void saveWeatherDescriptionToInternalAndExternalStorage() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            saveWeatherDescriptionToExternalStorage();
+        }
+        saveWeatherDescriptionToInternalStorage();
+    }
+
+    private void saveWeatherDescriptionToInternalStorage() {
+        File file = StorageHelper.getFileFromInternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
+        saveTextToFile(file, descriptionTextView.getText().toString());
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void saveWeatherDescriptionToExternalStorage() {
+        File file = StorageHelper.getFileFromExternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
+        saveTextToFile(file, descriptionTextView.getText().toString());
+    }
+
+    private void saveTextToFile(File file, String text) {
+        if (!StorageHelper.isExternalStorageWritable()) {
+            return;
+        }
+
+        try {
+            FileOutputStream out = new FileOutputStream(file, false);
+            out.write(text.getBytes());
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            Log.e(TAG, "saveTextToFile: ", e);
+        }
     }
 
     private void fillData(CurrentWeatherModel model) {

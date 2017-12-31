@@ -1,4 +1,4 @@
-package com.tehreh1uneh.petrichor.ui.saveddata;
+package com.tehreh1uneh.petrichor.model.preferences;
 
 import android.app.Activity;
 import android.content.Context;

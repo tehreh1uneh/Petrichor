@@ -1,6 +1,7 @@
 package com.tehreh1uneh.petrichor.ui.currentweather;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -9,7 +10,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -27,15 +27,16 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.tehreh1uneh.petrichor.R;
+import com.tehreh1uneh.petrichor.model.database.DatabaseHelper;
+import com.tehreh1uneh.petrichor.model.database.WeatherHistorySource;
+import com.tehreh1uneh.petrichor.model.preferences.SharedPreferencesHelper;
+import com.tehreh1uneh.petrichor.model.preferences.StorageHelper;
 import com.tehreh1uneh.petrichor.model.restclient.RestClient;
 import com.tehreh1uneh.petrichor.model.restclient.response.CurrentWeatherModel;
 import com.tehreh1uneh.petrichor.ui.base.IOnBackListener;
-import com.tehreh1uneh.petrichor.ui.saveddata.SharedPreferencesHelper;
-import com.tehreh1uneh.petrichor.ui.saveddata.StorageHelper;
-import com.tehreh1uneh.petrichor.ui.saveddata.database.DatabaseHelper;
-import com.tehreh1uneh.petrichor.ui.saveddata.database.WeatherHistorySource;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -166,7 +167,22 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     }
 
     private void onClickFloatingButtonSend(View v) {
-        Snackbar.make(v, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
+        sendCurrentWeatherInfo();
+    }
+
+    private void sendCurrentWeatherInfo() {
+
+        String message = String.format("%s : %s, temperature: %s, pressure: %s, wind: %s",
+                lastReceivedCity, descriptionTextView.getText().toString().toLowerCase(), currentTemperatureTextView.getText(),
+                pressureTextView.getText(), windTextView.getText());
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.putExtra(Intent.EXTRA_TEXT, message);
+        intent.setType("text/plain");
+
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        }
     }
 
     private boolean onChangeFieldCity(TextView v, int actionId, KeyEvent event) {
@@ -196,15 +212,19 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
                     addWeatherHistory(receivedModel);
 
                 } else {
-                    // TODO message like 'something is going wrong'
+                    makeErrorToast();
                 }
             }
 
             @Override
             public void onFailure(Call<CurrentWeatherModel> call, Throwable t) {
-
+                makeErrorToast();
             }
         });
+    }
+
+    private void makeErrorToast() {
+        Toast.makeText(getContext(), R.string.petrichor_error_message, Toast.LENGTH_LONG).show();
     }
 
     private String getLastReceivedCity() {
@@ -365,7 +385,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         if (id == R.id.nav_share) {
 
         } else if (id == R.id.nav_send) {
-
+            sendCurrentWeatherInfo();
         }
 
         DrawerLayout drawer = currentWeatherView.findViewById(R.id.layout_drawer_weather_current);

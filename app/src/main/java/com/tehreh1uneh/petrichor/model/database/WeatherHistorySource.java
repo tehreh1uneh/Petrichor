@@ -1,4 +1,4 @@
-package com.tehreh1uneh.petrichor.ui.saveddata.database;
+package com.tehreh1uneh.petrichor.model.database;
 
 
 import android.content.ContentValues;
@@ -63,7 +63,10 @@ public class WeatherHistorySource {
 
         cursor.moveToFirst();
 
-        return !cursor.isAfterLast();
+        boolean result = !cursor.isAfterLast();
+        cursor.close();
+
+        return result;
     }
 
     public List<WeatherHistoryRow> getAllHistory() {

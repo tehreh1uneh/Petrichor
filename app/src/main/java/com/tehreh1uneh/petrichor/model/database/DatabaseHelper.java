@@ -1,4 +1,4 @@
-package com.tehreh1uneh.petrichor.ui.saveddata.database;
+package com.tehreh1uneh.petrichor.model.database;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

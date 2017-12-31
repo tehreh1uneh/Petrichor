@@ -31,7 +31,7 @@ public class CurrentWeatherModel {
     private Clouds clouds;
     @SerializedName("dt")
     @Expose
-    private Integer dt;
+    private Long unixTimeStamp;
     @SerializedName("sys")
     @Expose
     private Sys sys;
@@ -101,12 +101,12 @@ public class CurrentWeatherModel {
         this.clouds = clouds;
     }
 
-    public Integer getDt() {
-        return dt;
+    public Long getUnixTimeStamp() {
+        return unixTimeStamp;
     }
 
-    public void setDt(Integer dt) {
-        this.dt = dt;
+    public void setUnixTimeStamp(Long unixTimeStamp) {
+        this.unixTimeStamp = unixTimeStamp;
     }
 
     public Sys getSys() {

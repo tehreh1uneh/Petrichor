@@ -34,6 +34,8 @@ import com.tehreh1uneh.petrichor.model.restclient.response.CurrentWeatherModel;
 import com.tehreh1uneh.petrichor.ui.base.IOnBackListener;
 import com.tehreh1uneh.petrichor.ui.saveddata.SharedPreferencesHelper;
 import com.tehreh1uneh.petrichor.ui.saveddata.StorageHelper;
+import com.tehreh1uneh.petrichor.ui.saveddata.database.DatabaseHelper;
+import com.tehreh1uneh.petrichor.ui.saveddata.database.WeatherHistorySource;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -70,8 +72,9 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     private TextView pressureTextView;
     private DrawerLayout drawer;
 
-    private SimpleDateFormat dateFormat;
+    private SimpleDateFormat dateFormatDayOfWeek = new SimpleDateFormat("EEEE");
     private String lastReceivedCity;
+    private WeatherHistorySource dbSource;
 
     @Nullable
     @Override
@@ -81,9 +84,9 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         initializeViews(currentWeatherView);
         loadTextFromInternalOrExternalStorage();
         loadSettingsFromPreferences();
+        initializeDatabase();
 
-        dateFormat = new SimpleDateFormat("EEEE");
-        dateFormat.setTimeZone(TimeZone.getTimeZone(CURRENT_GMT));
+        dateFormatDayOfWeek.setTimeZone(TimeZone.getTimeZone(CURRENT_GMT));
 
         return currentWeatherView;
     }
@@ -132,6 +135,11 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         updateCurrentWeather();
     }
 
+    private void initializeDatabase() {
+        dbSource = new WeatherHistorySource(this.getContext());
+        dbSource.open();
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_settings_weather_current, menu);
@@ -141,6 +149,12 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     public void onSaveInstanceState(Bundle outState) {
         SharedPreferencesHelper.saveToSharedPreferences(getActivity(), getString(R.string.petrichor_key_last_received_city), getLastReceivedCity());
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onDestroyView() {
+        dbSource.close();
+        super.onDestroyView();
     }
 
     private void onClickToolbarNavigationButton(View v) {
@@ -179,6 +193,8 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
                     fillData(receivedModel);
                     lastReceivedCity = cityName;
                     saveWeatherDescriptionToInternalAndExternalStorage();
+                    addWeatherHistory(receivedModel);
+
                 } else {
                     // TODO message like 'something is going wrong'
                 }
@@ -196,6 +212,46 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
             return DEFAULT_CITY;
         }
         return lastReceivedCity;
+    }
+
+    private void fillData(CurrentWeatherModel model) {
+        String city = String.format("%s,%s", model.getName(), model.getSys().getCountry());
+        cityEditText.setText(city);
+
+        descriptionTextView.setText(model.getWeather().get(0).getMain());
+        dayOfWeekTextView.setText(dateFormatDayOfWeek.format(new Date()));
+
+        String temp = String.format("%s%s", model.getMain().getTemperature(), "°");
+        currentTemperatureTextView.setText(temp);
+
+        todayTextView.setText(R.string.petrichor_today);
+
+        String minTemp = model.getMain().getTempMin().toString();
+        minTemperatureTextView.setText(minTemp);
+
+        String maxTemp = model.getMain().getTempMax().toString();
+        maxTemperatureTextView.setText(maxTemp);
+
+        String direction = getDirection(model.getWind().getDegrees());
+        String windSpeed = model.getWind().getSpeed().toString();
+        String windDescription = String.format("%s %s %s", direction.toUpperCase(), windSpeed, "m/s");
+        windTextView.setText(windDescription);
+
+        String pressure = String.format("%s %s", model.getMain().getPressure(), "hPa");
+        pressureTextView.setText(pressure);
+    }
+
+    private void addWeatherHistory(CurrentWeatherModel receivedModel) {
+        Date date = new Date(receivedModel.getUnixTimeStamp() * 1000);
+        String formattedDate = DatabaseHelper.dateFormatDatabase.format(date);
+        String city = cityEditText.getText().toString();
+        float temperature = receivedModel.getMain().getTemperature().floatValue();
+        float pressure = receivedModel.getMain().getPressure().floatValue();
+        float windSpeed = receivedModel.getWind().getSpeed().floatValue();
+
+        if (!dbSource.hasInfo(city, formattedDate)) {
+            dbSource.add(city, formattedDate, temperature, pressure, windSpeed);
+        }
     }
 
     private void loadTextFromInternalOrExternalStorage() {
@@ -245,34 +301,6 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         } catch (IOException e) {
             Log.e(TAG, "saveTextToFile: ", e);
         }
-    }
-
-    private void fillData(CurrentWeatherModel model) {
-        String city = String.format("%s,%s", model.getName(), model.getSys().getCountry());
-        cityEditText.setText(city);
-
-        descriptionTextView.setText(model.getWeather().get(0).getMain());
-        dayOfWeekTextView.setText(dateFormat.format(new Date()));
-
-        String temp = String.format("%s%s", model.getMain().getTemperature(), "°");
-        currentTemperatureTextView.setText(temp);
-
-        todayTextView.setText(R.string.petrichor_today);
-
-        String minTemp = model.getMain().getTempMin().toString();
-        minTemperatureTextView.setText(minTemp);
-
-        String maxTemp = model.getMain().getTempMax().toString();
-        maxTemperatureTextView.setText(maxTemp);
-
-        String direction = getDirection(model.getWind().getDegrees());
-        String windSpeed = model.getWind().getSpeed().toString();
-        String windDescription = String.format("%s %s %s", direction.toUpperCase(), windSpeed, "m/s");
-        windTextView.setText(windDescription);
-
-        String pressure = String.format("%s %s", model.getMain().getPressure(), "hPa");
-        pressureTextView.setText(pressure);
-
     }
 
     private String getDirection(double degrees) {

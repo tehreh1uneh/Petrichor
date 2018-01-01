@@ -45,6 +45,21 @@ public class CurrentWeatherModel {
     @Expose
     private Integer cod;
 
+    public void fillFrom(CurrentWeatherModel other) {
+        coordinates = other.coordinates;
+        weather = other.weather;
+        base = other.base;
+        main = other.main;
+        visibility = other.visibility;
+        wind = other.wind;
+        clouds = other.clouds;
+        unixTimeStamp = other.unixTimeStamp;
+        sys = other.sys;
+        id = other.id;
+        name = other.name;
+        cod = other.cod;
+    }
+
     public Coordinates getCoordinates() {
         return coordinates;
     }

@@ -1,10 +1,13 @@
 package com.tehreh1uneh.petrichor.ui.currentweather;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -30,24 +33,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tehreh1uneh.petrichor.R;
+import com.tehreh1uneh.petrichor.model.Utils;
 import com.tehreh1uneh.petrichor.model.database.DatabaseHelper;
 import com.tehreh1uneh.petrichor.model.database.WeatherHistorySource;
 import com.tehreh1uneh.petrichor.model.preferences.SharedPreferencesHelper;
 import com.tehreh1uneh.petrichor.model.preferences.StorageHelper;
-import com.tehreh1uneh.petrichor.model.restclient.RestClient;
 import com.tehreh1uneh.petrichor.model.restclient.response.CurrentWeatherModel;
+import com.tehreh1uneh.petrichor.model.restclient.service.CurrentWeatherService;
+import com.tehreh1uneh.petrichor.model.restclient.service.IRetrofitEventListener;
 import com.tehreh1uneh.petrichor.ui.base.IOnBackListener;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient.API_KEY_OPEN_WEATHER;
 import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient.LANGUAGE_DESCRIPTION;
@@ -56,12 +55,11 @@ import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.CURRENT_GMT;
 import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.DEFAULT_CITY;
 import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.FILE_NAME_LAST_WEATHER_DESCRIPTION;
 
-public class CurrentWeatherFragment extends Fragment implements NavigationView.OnNavigationItemSelectedListener, IOnBackListener {
+public class CurrentWeatherFragment extends Fragment implements NavigationView.OnNavigationItemSelectedListener, IOnBackListener, IRetrofitEventListener {
 
     public static final String TAG = "###" + CurrentWeatherFragment.class.getSimpleName();
-
+    boolean bound = false;
     private View currentWeatherView;
-
     private EditText cityEditText;
     private TextView descriptionTextView;
     private TextView dayOfWeekTextView;
@@ -72,14 +70,16 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     private TextView windTextView;
     private TextView pressureTextView;
     private DrawerLayout drawer;
-
     private SimpleDateFormat dateFormatDayOfWeek = new SimpleDateFormat("EEEE");
     private String lastReceivedCity;
     private WeatherHistorySource dbSource;
+    private CurrentWeatherService weatherService;
+    private ServiceConnection serviceConnection;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView");
 
         currentWeatherView = inflater.inflate(R.layout.fragment_weather_current, container, false);
         initializeViews(currentWeatherView);
@@ -93,6 +93,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     }
 
     private void initializeViews(View currentView) {
+        Log.d(TAG, "initializeViews");
 
         Toolbar toolbar = currentWeatherView.findViewById(R.id.toolbar);
         AppCompatActivity currentActivity = (CurrentWeatherActivity) getActivity();
@@ -130,15 +131,55 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     }
 
     private void loadSettingsFromPreferences() {
+        Log.d(TAG, "loadSettingsFromPreferences");
         SharedPreferences preferences = getActivity().getPreferences(Context.MODE_PRIVATE);
         lastReceivedCity = preferences.getString(getString(R.string.petrichor_key_last_received_city), getLastReceivedCity());
         cityEditText.setText(lastReceivedCity);
-        updateCurrentWeather();
     }
 
     private void initializeDatabase() {
+        Log.d(TAG, "initializeDatabase");
         dbSource = new WeatherHistorySource(this.getContext());
         dbSource.open();
+    }
+
+    @Override
+    public void onStart() {
+        Log.d(TAG, "onStart");
+        super.onStart();
+
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                Log.d(TAG, "onServiceConnected");
+
+                CurrentWeatherService.CurrentWeatherServiceBinder binder = (CurrentWeatherService.CurrentWeatherServiceBinder) service;
+                weatherService = binder.getService();
+                weatherService.setListener(CurrentWeatherFragment.this);
+                bound = true;
+                updateCurrentWeather();
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                Log.d(TAG, "onServiceDisconnected");
+                bound = false;
+            }
+        };
+
+        Intent intent = new Intent(getContext(), CurrentWeatherService.class);
+        getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onStop() {
+        Log.d(TAG, "onStop");
+        super.onStop();
+        if (bound) {
+            getActivity().unbindService(serviceConnection);
+            bound = false;
+            Log.d(TAG, "onStop: service unbidden");
+        }
     }
 
     @Override
@@ -148,12 +189,14 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        Log.d(TAG, "onSaveInstanceState");
         SharedPreferencesHelper.saveToSharedPreferences(getActivity(), getString(R.string.petrichor_key_last_received_city), getLastReceivedCity());
         super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onDestroyView() {
+        Log.d(TAG, "onDestroyView");
         dbSource.close();
         super.onDestroyView();
     }
@@ -173,7 +216,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     private void sendCurrentWeatherInfo() {
 
         String message = String.format("%s : %s, temperature: %s, pressure: %s, wind: %s",
-                lastReceivedCity, descriptionTextView.getText().toString().toLowerCase(), currentTemperatureTextView.getText(),
+                getLastReceivedCity(), descriptionTextView.getText().toString().toLowerCase(), currentTemperatureTextView.getText(),
                 pressureTextView.getText(), windTextView.getText());
 
         Intent intent = new Intent(Intent.ACTION_SEND);
@@ -199,28 +242,32 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
     }
 
     private void updateCurrentWeather() {
+        Log.d(TAG, "updateCurrentWeather");
         String cityName = cityEditText.getText().toString();
+        setWaitingMode(true);
 
-        RestClient.getApi().getCurrentWeatherByCity(cityName, UNITS_FORMAT, LANGUAGE_DESCRIPTION, API_KEY_OPEN_WEATHER).enqueue(new Callback<CurrentWeatherModel>() {
-            @Override
-            public void onResponse(Call<CurrentWeatherModel> call, Response<CurrentWeatherModel> response) {
-                if (response.isSuccessful()) {
-                    CurrentWeatherModel receivedModel = response.body();
-                    fillData(receivedModel);
-                    lastReceivedCity = cityName;
-                    saveWeatherDescriptionToInternalAndExternalStorage();
-                    addWeatherHistory(receivedModel);
+        if (bound) {
+            weatherService.getCurrentWeather(cityName, UNITS_FORMAT, LANGUAGE_DESCRIPTION, API_KEY_OPEN_WEATHER);
+        }
+    }
 
-                } else {
-                    makeErrorToast();
-                }
-            }
+    @Override
+    public void onResponseCurrentWeatherModel(CurrentWeatherModel model) {
+        updateUI(model);
+        setWaitingMode(false);
+    }
 
-            @Override
-            public void onFailure(Call<CurrentWeatherModel> call, Throwable t) {
-                makeErrorToast();
-            }
-        });
+    private void updateUI(CurrentWeatherModel receivedModel) {
+        if (receivedModel != null) {
+            String cityName = String.format("%s,%s", receivedModel.getName(), receivedModel.getSys().getCountry());
+            fillData(receivedModel);
+            lastReceivedCity = cityName;
+            saveWeatherDescriptionToInternalAndExternalStorage();
+            addWeatherHistory(receivedModel);
+        } else {
+            cityEditText.setText(lastReceivedCity);
+            makeErrorToast();
+        }
     }
 
     private void makeErrorToast() {
@@ -252,7 +299,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         String maxTemp = model.getMain().getTempMax().toString();
         maxTemperatureTextView.setText(maxTemp);
 
-        String direction = getDirection(model.getWind().getDegrees());
+        String direction = Utils.getDirection(model.getWind().getDegrees(), getResources().getStringArray(R.array.directions));
         String windSpeed = model.getWind().getSpeed().toString();
         String windDescription = String.format("%s %s %s", direction.toUpperCase(), windSpeed, "m/s");
         windTextView.setText(windDescription);
@@ -299,60 +346,31 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
 
     private void saveWeatherDescriptionToInternalStorage() {
         File file = StorageHelper.getFileFromInternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
-        saveTextToFile(file, descriptionTextView.getText().toString());
+        Utils.saveTextToFile(file, descriptionTextView.getText().toString());
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void saveWeatherDescriptionToExternalStorage() {
         File file = StorageHelper.getFileFromExternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
-        saveTextToFile(file, descriptionTextView.getText().toString());
+        Utils.saveTextToFile(file, descriptionTextView.getText().toString());
     }
 
-    private void saveTextToFile(File file, String text) {
-        if (!StorageHelper.isExternalStorageWritable()) {
-            return;
-        }
+    private void setWaitingMode(boolean showProgressBar) {
+        int progressBarVisibility = showProgressBar ? View.VISIBLE : View.INVISIBLE;
+        int elementsVisibility = !showProgressBar ? View.VISIBLE : View.INVISIBLE;
 
-        try {
-            FileOutputStream out = new FileOutputStream(file, false);
-            out.write(text.getBytes());
-            out.flush();
-            out.close();
-        } catch (IOException e) {
-            Log.e(TAG, "saveTextToFile: ", e);
-        }
-    }
-
-    private String getDirection(double degrees) {
-
-        String[] directions = getResources().getStringArray(R.array.directions);
-        int amountOfDirections = directions.length;
-
-        double max = 360;
-        double step = max / amountOfDirections;
-        double halfStep = step / 2;
-        double left = halfStep;
-        double right = left + step;
-        int position = 0;
-
-        for (; position < amountOfDirections; position++) {
-
-            if (position == 0) {
-                if (degrees >= max - halfStep || degrees < halfStep) {
-                    break;
-                }
-            }
-
-            if (degrees >= left && degrees < right) {
-                position++;
-                break;
-            }
-
-            left += step;
-            right += step;
-        }
-
-        return directions[position];
+        currentWeatherView.findViewById(R.id.petrichor_progress_bar).setVisibility(progressBarVisibility);
+        descriptionTextView.setVisibility(elementsVisibility);
+        currentTemperatureTextView.setVisibility(elementsVisibility);
+        dayOfWeekTextView.setVisibility(elementsVisibility);
+        todayTextView.setVisibility(elementsVisibility);
+        minTemperatureTextView.setVisibility(elementsVisibility);
+        maxTemperatureTextView.setVisibility(elementsVisibility);
+        currentWeatherView.findViewById(R.id.petrichor_header_wind).setVisibility(elementsVisibility);
+        windTextView.setVisibility(elementsVisibility);
+        currentWeatherView.findViewById(R.id.petrichor_header_pressure).setVisibility(elementsVisibility);
+        pressureTextView.setVisibility(elementsVisibility);
+        currentWeatherView.findViewById(R.id.petrichor_view_horizontal_line).setVisibility(elementsVisibility);
     }
 
     @Override
@@ -371,6 +389,7 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         int id = item.getItemId();
 
         if (id == R.id.petrichor_action_settings) {
+            // TODO add settings activity
             return true;
         }
 
@@ -379,11 +398,10 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-
         int id = item.getItemId();
 
         if (id == R.id.nav_share) {
-
+            // TODO add implicit intent for social networks
         } else if (id == R.id.nav_send) {
             sendCurrentWeatherInfo();
         }

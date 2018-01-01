@@ -25,14 +25,28 @@
         android:textSize="16sp"
         tools:text="Clear" />
 
-    <TextView
-        android:id="@+id/petrichor_text_view_current_temperature"
+    <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="@dimen/petrichor_margin_basic_half"
-        android:textSize="@dimen/petrichor_degrees_text_size"
-        tools:text="-15°" />
+        android:layout_marginTop="@dimen/petrichor_margin_basic_half">
+
+        <TextView
+            android:id="@+id/petrichor_text_view_current_temperature"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="@dimen/petrichor_degrees_text_size"
+            tools:text="-15°" />
+
+        <ProgressBar
+            android:id="@+id/petrichor_progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
@@ -73,6 +87,7 @@
     </android.support.constraint.ConstraintLayout>
 
     <View
+        android:id="@+id/petrichor_view_horizontal_line"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@android:color/black"
@@ -80,6 +95,7 @@
         android:layout_marginRight="@dimen/petrichor_margin_basic_half" />
 
     <TextView
+        android:id="@+id/petrichor_header_wind"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/petrichor_margin_basic"
@@ -97,6 +113,7 @@
         tools:text="NE 3 m/s" />
 
     <TextView
+        android:id="@+id/petrichor_header_pressure"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/petrichor_margin_basic_half"

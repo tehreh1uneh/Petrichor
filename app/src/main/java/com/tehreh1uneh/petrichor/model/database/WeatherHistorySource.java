@@ -46,6 +46,20 @@ public class WeatherHistorySource {
         db.insert(DatabaseHelper.TABLE_WEATHER_HISTORY, null, row);
     }
 
+    public String getLastCity() {
+
+        String orderBy = String.format("%s DESC", DatabaseHelper.COLUMN_ID);
+        Cursor cursor = db.query(DatabaseHelper.TABLE_WEATHER_HISTORY, columns, null, null, null, null, orderBy, "1");
+
+        cursor.moveToFirst();
+
+        if (cursor.isAfterLast()) {
+            return null;
+        } else {
+            return cursor.getString(1);
+        }
+    }
+
     public boolean hasInfo(String city, String date) {
 
         String whereCondition = String.format("%s = '%s' AND %s = '%s'",

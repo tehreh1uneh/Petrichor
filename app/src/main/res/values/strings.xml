@@ -26,5 +26,8 @@
     <string name="petrichor_header_image_description">little sun</string>
     <string name="petrichor_key_last_received_city">city</string>
     <string name="petrichor_error_message">Something goes wrong, please try again later</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
+    <string name="petrichor_widget_image_view_content_description">weather icon</string>
 
 </resources>

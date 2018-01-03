@@ -30,12 +30,16 @@ public class CurrentWeatherWidget extends AppWidgetProvider implements IRetrofit
         this.appWidgetManager = appWidgetManager;
         this.appWidgetIds = appWidgetIds;
         this.context = context;
-
         getCurrentWeatherInfo(context);
     }
 
     private void getCurrentWeatherInfo(Context context) {
         String city = getLastCity(context);
+
+        if (city == null) {
+            return;
+        }
+
         CurrentWeatherCallback callback = new CurrentWeatherCallback(this);
         RestClient.getApi().getCurrentWeatherByCity(city, UNITS_FORMAT, LANGUAGE_DESCRIPTION, API_KEY_OPEN_WEATHER).enqueue(callback);
     }

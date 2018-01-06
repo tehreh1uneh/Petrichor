@@ -5,12 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -37,13 +35,11 @@ import com.tehreh1uneh.petrichor.model.Utils;
 import com.tehreh1uneh.petrichor.model.database.DatabaseHelper;
 import com.tehreh1uneh.petrichor.model.database.WeatherHistorySource;
 import com.tehreh1uneh.petrichor.model.preferences.SharedPreferencesHelper;
-import com.tehreh1uneh.petrichor.model.preferences.StorageHelper;
 import com.tehreh1uneh.petrichor.model.restclient.response.CurrentWeatherModel;
 import com.tehreh1uneh.petrichor.model.restclient.service.CurrentWeatherService;
 import com.tehreh1uneh.petrichor.model.restclient.service.IRetrofitEventListener;
 import com.tehreh1uneh.petrichor.ui.base.IOnBackListener;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -53,7 +49,6 @@ import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient
 import static com.tehreh1uneh.petrichor.model.restclient.config.ConfigRestClient.UNITS_FORMAT;
 import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.CURRENT_GMT;
 import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.DEFAULT_CITY;
-import static com.tehreh1uneh.petrichor.ui.config.ConfigUi.FILE_NAME_LAST_WEATHER_DESCRIPTION;
 
 public class CurrentWeatherFragment extends Fragment implements NavigationView.OnNavigationItemSelectedListener, IOnBackListener, IRetrofitEventListener {
 
@@ -83,7 +78,6 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
 
         currentWeatherView = inflater.inflate(R.layout.fragment_weather_current, container, false);
         initializeViews(currentWeatherView);
-        loadTextFromInternalOrExternalStorage();
         loadSettingsFromPreferences();
         initializeDatabase();
 
@@ -262,7 +256,6 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
             String cityName = String.format("%s,%s", receivedModel.getName(), receivedModel.getSys().getCountry());
             fillData(receivedModel);
             lastReceivedCity = cityName;
-            saveWeatherDescriptionToInternalAndExternalStorage();
             addWeatherHistory(receivedModel);
         } else {
             cityEditText.setText(lastReceivedCity);
@@ -319,40 +312,6 @@ public class CurrentWeatherFragment extends Fragment implements NavigationView.O
         if (!dbSource.hasInfo(city, formattedDate)) {
             dbSource.add(city, formattedDate, temperature, pressure, windSpeed);
         }
-    }
-
-    private void loadTextFromInternalOrExternalStorage() {
-        if (!StorageHelper.isExternalStorageReadable()) {
-            return;
-        }
-
-        String description;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            description = StorageHelper.loadTextFromExternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
-        } else {
-            description = StorageHelper.loadTextFromInternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
-        }
-
-        descriptionTextView.setText(description);
-    }
-
-    private void saveWeatherDescriptionToInternalAndExternalStorage() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            saveWeatherDescriptionToExternalStorage();
-        }
-        saveWeatherDescriptionToInternalStorage();
-    }
-
-    private void saveWeatherDescriptionToInternalStorage() {
-        File file = StorageHelper.getFileFromInternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
-        Utils.saveTextToFile(file, descriptionTextView.getText().toString());
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void saveWeatherDescriptionToExternalStorage() {
-        File file = StorageHelper.getFileFromExternalStorage(getActivity(), FILE_NAME_LAST_WEATHER_DESCRIPTION);
-        Utils.saveTextToFile(file, descriptionTextView.getText().toString());
     }
 
     private void setWaitingMode(boolean showProgressBar) {
